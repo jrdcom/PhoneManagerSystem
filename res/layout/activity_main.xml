@@ -1,16 +1,55 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingBottom="@dimen/activity_vertical_margin"
-    android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_vertical_margin"
+    android:orientation="vertical"
+    android:background="#FFFFFF"
     tools:context=".MainActivity" >
 
-    <TextView
+    <android.support.v4.view.ViewPager
+        android:id="@+id/view_pager"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/hello_world" />
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="#E0FFFF" >
+    </android.support.v4.view.ViewPager>
 
-</RelativeLayout>
+    <ImageView 
+        android:id="@+id/cursor"
+        android:layout_width="match_parent"
+        android:layout_height="5dp"
+        android:scaleType="matrix"/>
+    <LinearLayout 
+        android:id="@+id/tab_layout"
+        android:layout_width="fill_parent"
+        android:layout_height="40dp"
+        android:background="#FFFFFF"
+        android:orientation="horizontal">
+        
+        <TextView 
+            android:id="@+id/tab_adbclient"
+            android:layout_width="0dp"
+            android:layout_height="fill_parent"
+            android:layout_weight="1"
+            android:textColor="#000000"
+            android:gravity="center"
+            android:text="@string/tab_adbclient"/>
+        <TextView 
+            android:id="@+id/tab_comment"
+            android:layout_width="0dp"
+            android:layout_height="fill_parent"
+            android:layout_weight="1"
+            android:textColor="#000000"
+            android:gravity="center"
+            android:text="@string/tab_comment"/>
+        <TextView 
+            android:id="@+id/tab_private"
+            android:layout_width="0dp"
+            android:layout_height="fill_parent"
+            android:layout_weight="1"
+            android:textColor="#000000"
+            android:gravity="center"
+            android:text="@string/tab_private"/>
+        </LinearLayout>
+        
+</LinearLayout>

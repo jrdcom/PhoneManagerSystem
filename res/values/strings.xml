@@ -3,6 +3,15 @@
 
     <string name="app_name">PhoneManagerSystem</string>
     <string name="action_settings">Settings</string>
+    <string name="exit_service">退出服务</string>
     <string name="hello_world">Hello world!</string>
+    <string name="tab_adbclient">adb 调试</string>
+    <string name="tab_comment">娱乐</string>
+    <string name="tab_private">手机管理</string>
+    <string name="contact_content">这是私信@我tab</string>
+    <string name="comment_content">这是评论tab</string>
+    <string name="private_content">这是私信tab</string>
+    <string name="show_text_two">测试页面-第二页</string>
+    <string name="set_host">input ip:</string>
 
 </resources>

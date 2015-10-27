@@ -11,15 +11,37 @@
 
 package com.app2.pms.debug.app;
 
+import com.app2.pms.debug.data.ParseModel;
+import com.app2.pms.debug.exec.Session;
+import com.app2.pms.debug.net.NetworkManager;
+
+import android.app.Service;
+import android.content.Intent;
+import android.os.Binder;
+import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
+import android.os.Looper;
 import android.os.Message;
 
 
-public class DebugService implements com.app2.pms.debug.data.ParseListener {
+public class DebugService extends Service implements com.app2.pms.debug.data.ParseListener {
     private ServiceHandler mServiceHandler;
-    public com.app2.pms.debug.net.NetworkManager mNetworkManager;
-    public com.app2.pms.debug.data.ParseModel mParseModel;
-    public com.app2.pms.debug.exec.Session mSession;
+    private NetworkManager mNetworkManager;
+    private ParseModel mParseModel;
+    private Session mSession;
+    
+    public DebugService() {
+        super();
+    }
+    
+    @Override
+    public void onCreate() {
+        //Looper.prepare();
+        mServiceHandler = new ServiceHandler();
+        mNetworkManager = new NetworkManager(mServiceHandler, this);
+        //Looper.loop();
+    }
     
     private class ServiceHandler extends Handler {
         @Override
@@ -36,5 +58,33 @@ public class DebugService implements com.app2.pms.debug.data.ParseListener {
     
     public void onParseComplete() {
     
+    }
+    
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        // TODO: the ret value need change
+        super.onStartCommand(intent, Service.START_STICKY, startId);
+        return START_STICKY;
+    }
+    
+    @Override
+    public void onDestroy() {
+    }
+    
+    @Override
+    public IBinder onBind(Intent intent) {
+        if (mNetworkManager != null) {
+            Bundle bundle = intent.getBundleExtra("ip-port");
+            String ip = bundle.getString("ip");
+            int port = bundle.getInt("port");
+            mNetworkManager.start(ip, port);
+        }
+        return new ExchangeBinder();
+    }
+    
+    public class ExchangeBinder extends Binder {
+        public DebugService getService() {
+            return DebugService.this;
+        }
     }
 }
