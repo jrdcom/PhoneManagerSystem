@@ -30,6 +30,8 @@ public class DebugService extends Service implements com.app2.pms.debug.data.Par
     private NetworkManager mNetworkManager;
     private ParseModel mParseModel;
     private Session mSession;
+    private boolean service_status = false;
+    private Handler adbMainHandler = null;
     
     public DebugService() {
         super();
@@ -47,7 +49,10 @@ public class DebugService extends Service implements com.app2.pms.debug.data.Par
         @Override
         public void handleMessage(Message msg) {
             // TODO Auto-generated method stub
-            super.handleMessage(msg);
+            //super.handleMessage(msg);
+            if(adbMainHandler != null) {
+                adbMainHandler.obtainMessage(msg.what, msg.obj).sendToTarget();
+            }
         }
     
     }
@@ -71,15 +76,26 @@ public class DebugService extends Service implements com.app2.pms.debug.data.Par
     public void onDestroy() {
     }
     
+    public void setAdbHandler(Handler mainHandler) {
+        this.adbMainHandler = mainHandler;
+    }
+    
     @Override
     public IBinder onBind(Intent intent) {
-        if (mNetworkManager != null) {
+        if (mNetworkManager != null && !service_status) {
             Bundle bundle = intent.getBundleExtra("ip-port");
             String ip = bundle.getString("ip");
             int port = bundle.getInt("port");
             mNetworkManager.start(ip, port);
+            service_status = true;
         }
         return new ExchangeBinder();
+    }
+    
+    @Override
+    public boolean onUnbind(Intent intent) {
+        this.adbMainHandler = null;
+        return false;
     }
     
     public class ExchangeBinder extends Binder {

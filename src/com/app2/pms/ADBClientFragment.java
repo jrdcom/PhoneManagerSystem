@@ -12,7 +12,9 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -29,13 +31,22 @@ public class ADBClientFragment extends Fragment implements OnClickListener{
     private Button mOkButton = null;
     private EditText mSetHost = null;
     private TextView mServerIp = null;
-    private TextView mOutTextView = null;
+    private TextView mTextInfo = null;
     
     private Activity mActivity = null;
     private AdbClientConnect connection;
-    public interface Callback {
-        void onImageButton(View v);
-    }
+    public Handler adbMainHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+            case Configuration.MSG_CONNECT_REMOTE_SERVER :
+                mTextInfo.append("\n begin to connect remote adb");
+            }
+        }
+    };
+    /*public interface Callback {
+        Handler getActivityHandler();
+    }*/
     public ADBClientFragment() {
         super();
     }
@@ -48,9 +59,7 @@ public class ADBClientFragment extends Fragment implements OnClickListener{
         mSetHost = (EditText) view.findViewById(R.id.host);
         mOkButton = (Button) view.findViewById(R.id.ok);
         mOkButton.setOnClickListener(this);
-        mServerIp = (TextView) view.findViewById(R.id.serverIp);
-        mServerIp.setText(IPv4v6Utils.getLocalIPAddress());
-        mOutTextView = (TextView) view.findViewById(R.id.outPut);
+        mTextInfo = (TextView) view.findViewById(R.id.text_info);
         
         mActivity = getActivity();
         return view;
@@ -71,7 +80,7 @@ public class ADBClientFragment extends Fragment implements OnClickListener{
     }
     
     private void startAndBindService(String ip) {
-       // mActivity.startService(new Intent(mActivity, DebugService.class));
+        mActivity.startService(new Intent(mActivity, DebugService.class));
         connection = new AdbClientConnect();
         Intent intent = new Intent(new Intent(mActivity.getApplicationContext(), DebugService.class));
         Bundle bundle = new Bundle();
@@ -95,6 +104,7 @@ public class ADBClientFragment extends Fragment implements OnClickListener{
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             mDebugService = ((DebugService.ExchangeBinder) service).getService();
+            mDebugService.setAdbHandler(adbMainHandler);
             LogExt.d(TAG, "connected server");
         }
 

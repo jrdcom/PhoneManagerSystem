@@ -4,9 +4,13 @@ package com.app2.pms;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.app2.pms.common.Configuration;
+import com.app2.pms.common.LogExt;
 import com.app2.pms.debug.app.DebugService;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
@@ -29,8 +33,9 @@ import android.view.animation.TranslateAnimation;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-public class MainActivity extends Activity implements ADBClientFragment.Callback{
+public class MainActivity extends Activity {
 
+    private static String TAG = "phonemanager";
     private ViewPager mViewPager;
     private ImageView mImageView;
     private TextView mContactText;
@@ -235,13 +240,6 @@ public class MainActivity extends Activity implements ADBClientFragment.Callback
     }
 
     @Override
-    public void onImageButton(View v) {
-        // TODO Auto-generatedVISIBLE method stub
-        BasicFragment frag;
-        final FragmentTransaction ft = getFragmentManager().beginTransaction();
-    }
-    
-    @Override
     public void onDestroy() {
         super.onDestroy();
     }
@@ -255,7 +253,8 @@ public class MainActivity extends Activity implements ADBClientFragment.Callback
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // TODO Auto-generated method stub
-        stopService(new Intent(this, DebugService.class));
+        boolean res = stopService(new Intent(this, DebugService.class));
+        LogExt.d(TAG, "status of ADB Services：" + res);
         return super.onOptionsItemSelected(item);
     }
     
