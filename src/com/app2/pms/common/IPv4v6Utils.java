@@ -150,7 +150,7 @@ public class IPv4v6Utils {
             }
 
             // 如果上面都没有， 则生成一个id：随机码
-            String uuid = getUUID(context);
+            String uuid = UUID.randomUUID().toString();
             if (!TextUtils.isEmpty(uuid)) {
                 deviceId.append("id");
                 deviceId.append(uuid);
