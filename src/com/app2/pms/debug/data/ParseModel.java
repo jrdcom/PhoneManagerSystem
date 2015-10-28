@@ -3,7 +3,7 @@
  *
  * @ Project : phone manager system
  * @ File Name : ParseModel.java
- * @ Date : 2015/10/13 ÐÇÆÚ¶þ
+ * @ Date : 2015/10/13
  * @ Author : 
  *
  */

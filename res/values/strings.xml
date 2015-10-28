@@ -13,5 +13,7 @@
     <string name="private_content">这是私信tab</string>
     <string name="show_text_two">测试页面-第二页</string>
     <string name="set_host">input ip:</string>
-
+    <string name="tcp_address">192.168.123.1</string>
+    <string name="test">test</string>
+    
 </resources>
