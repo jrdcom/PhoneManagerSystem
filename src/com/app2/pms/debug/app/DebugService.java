@@ -8,80 +8,136 @@
  *
  */
 
-
 package com.app2.pms.debug.app;
 
-import com.app2.pms.debug.data.ParseModel;
-import com.app2.pms.debug.exec.Session;
-import com.app2.pms.debug.net.NetworkManager;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 
 import android.app.Service;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
+import android.text.TextUtils;
 
+import com.app2.pms.common.Configuration;
+import com.app2.pms.common.IPv4v6Utils;
+import com.app2.pms.common.LogExt;
+import com.app2.pms.debug.adbd.AdbManager;
+import com.app2.pms.debug.data.ParseModel;
+import com.app2.pms.debug.exec.AdbSession;
+import com.app2.pms.debug.exec.Session;
+import com.app2.pms.debug.net.Data;
+import com.app2.pms.debug.net.Network.ChatMessage;
+import com.app2.pms.debug.net.NetworkManager;
 
 public class DebugService extends Service implements com.app2.pms.debug.data.ParseListener {
+    private static final String TAG = "app2-DebugService";
     private ServiceHandler mServiceHandler;
     private NetworkManager mNetworkManager;
     private ParseModel mParseModel;
     private Session mSession;
     private boolean service_status = false;
     private Handler adbMainHandler = null;
-    
+    private String mIp = null;
+
+    private ServerHandler mServerHandler = null;
+    private Looper mLooper = null;
+
+    private AdbSession mAdbSession = null;
+
     public DebugService() {
         super();
     }
-    
+
     @Override
     public void onCreate() {
-        //Looper.prepare();
+        // Looper.prepare();
         mServiceHandler = new ServiceHandler();
-        mNetworkManager = new NetworkManager(mServiceHandler, this);
-        //Looper.loop();
+        mIp = IPv4v6Utils.getLocalIPAddress();
+        mNetworkManager = new NetworkManager(mServiceHandler, this, mIp);
+        mNetworkManager.setNetTransportListener(mNetTransportListener);
+        // Looper.loop();
+
+        HandlerThread thread = new HandlerThread("ServerHandler");
+        thread.start();
+
+        mLooper = thread.getLooper();
+        mServerHandler = new ServerHandler(mLooper);
     }
-    
+
+    private void openLocalAdbdWifiDebug() {
+        AdbManager.setAdbdTcpPort(String.valueOf(Configuration.ADB_SERVER_PORT));
+        AdbManager.stopAdbd();
+        AdbManager.startAdbd();
+    }
+
+    private int startAdbSession(String ip) {
+        int flag = Configuration.FLAG_START_ADB_FAIL;
+        if (null != ip && !TextUtils.isEmpty(ip)) {
+            mServiceHandler.sendEmptyMessage(Configuration.MSG_UI_CMD_START_ADB);
+            Socket socket = new Socket();
+            try {
+                socket.connect(new InetSocketAddress(ip, Configuration.ADB_SERVER_PORT), 5000);
+                mAdbSession = new AdbSession(mNetworkManager.getRemoteClient(), socket);
+                mAdbSession.startSession();
+                flag = Configuration.FLAG_START_ADB_SUCCESS;
+                LogExt.e(TAG, "client connect local adb socket ok");
+            } catch (IOException e) {
+                LogExt.e(TAG, "client connect socket error", e);
+                flag = Configuration.FLAG_START_ADB_FAIL;
+                if (null != mAdbSession) {
+                    mAdbSession.exitSession();
+                }
+            }
+        }
+        return flag;
+    }
+
     private class ServiceHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
             // TODO Auto-generated method stub
-            //super.handleMessage(msg);
-            if(adbMainHandler != null) {
-                adbMainHandler.obtainMessage(msg.what, msg.obj).sendToTarget();
+            // super.handleMessage(msg);
+            if (adbMainHandler != null) {
+                adbMainHandler.sendMessage(Message.obtain(msg));
             }
         }
-    
+
     }
-    
+
     public void sendToHandler() {
-    
+
     }
-    
+
     public void onParseComplete() {
-    
+
     }
-    
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         // TODO: the ret value need change
         super.onStartCommand(intent, Service.START_STICKY, startId);
         return START_STICKY;
     }
-    
+
     @Override
     public void onDestroy() {
+        mLooper.quit();
     }
-    
+
     public void setAdbHandler(Handler mainHandler) {
         this.adbMainHandler = mainHandler;
     }
-    
+
     @Override
     public IBinder onBind(Intent intent) {
+        LogExt.d(TAG, "onBind");
         if (mNetworkManager != null && !service_status) {
             Bundle bundle = intent.getBundleExtra("ip-port");
             String ip = bundle.getString("ip");
@@ -91,16 +147,67 @@ public class DebugService extends Service implements com.app2.pms.debug.data.Par
         }
         return new ExchangeBinder();
     }
-    
+
     @Override
     public boolean onUnbind(Intent intent) {
         this.adbMainHandler = null;
         return false;
     }
-    
+
     public class ExchangeBinder extends Binder {
         public DebugService getService() {
             return DebugService.this;
         }
     }
+
+    public interface NetTransportListener {
+        void onNewMsg(ChatMessage msg);
+
+        void onNewData(Data data);
+    }
+
+    private final class ServerHandler extends Handler {
+        public ServerHandler(Looper looper) {
+            super(looper);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            LogExt.d(TAG, "ServerHandler handleMessage msg " + msg);
+            switch (msg.what) {
+                case Configuration.MSG_CONNECT_LOCAL_ADBD:
+                    openLocalAdbdWifiDebug();
+                    int flag = startAdbSession(mIp);
+                    ChatMessage retMsg = new ChatMessage();
+                    retMsg.text = Configuration.CMD_RETURN_CONNECT_ADB + flag;
+                    mNetworkManager.getRemoteClient().sendTCP(retMsg);
+                    mServiceHandler.sendMessage(mServiceHandler.obtainMessage(Configuration.MSG_UI_START_ADB, flag));
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    private NetTransportListener mNetTransportListener = new NetTransportListener() {
+
+        @Override
+        public void onNewMsg(ChatMessage msg) {
+
+            if (!TextUtils.isEmpty(msg.text) && msg.text.startsWith(Configuration.CMD_CONNECT_ADB)) {
+                String temp = msg.text.substring(Configuration.CMD_CONNECT_ADB.length()).trim();
+                mServerHandler.sendMessage(mServerHandler.obtainMessage(Configuration.MSG_CONNECT_LOCAL_ADBD));
+                LogExt.d(TAG, "start connect local adb pc terminal ip is " + temp);
+            }
+        }
+
+        @Override
+        public void onNewData(Data data) {
+            if (null != mAdbSession) {
+                mAdbSession.onRemoteClientNewData(data);
+            } else {
+                LogExt.e(TAG, "adb session not ready error!");
+            }
+        }
+    };
 }

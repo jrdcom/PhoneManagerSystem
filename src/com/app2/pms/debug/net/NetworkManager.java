@@ -3,7 +3,7 @@
  *
  * @ Project : phone manager system
  * @ File Name : NetworkManager.java
- * @ Date : 2015/10/13 ���ڶ�
+ * @ Date : 2015/10/13
  * @ Author : 
  *
  */
@@ -11,20 +11,17 @@
 package com.app2.pms.debug.net;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.Socket;
 
 import android.content.Context;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
-import android.text.TextUtils;
 
 import com.app2.pms.common.Configuration;
 import com.app2.pms.common.IPv4v6Utils;
 import com.app2.pms.common.LogExt;
-import com.app2.pms.debug.exec.AdbSession;
+import com.app2.pms.debug.app.DebugService.NetTransportListener;
 import com.app2.pms.debug.net.Network.ChatMessage;
 import com.app2.pms.debug.net.Network.RegisterName;
 import com.app2.pms.debug.net.Network.UpdateNames;
@@ -43,14 +40,21 @@ public class NetworkManager {
     private RemoteClientHandler mRemoteClientHandler = null;
     private Looper mRemoteClientLooper = null;
     private Client mRemoteClient = null;
+    private NetTransportListener mNetTransportListener = null;
 
-    private AdbSession mAdbSession = null;
-
-    public NetworkManager(Handler mainHandler, Context context) {
+    public NetworkManager(Handler mainHandler, Context context, String ip) {
         mMainHandler = mainHandler;
 
-        mLocalIp = IPv4v6Utils.getLocalIPAddress();
+        mLocalIp = ip;
         mUUID = IPv4v6Utils.getUUID(context);
+    }
+
+    public Client getRemoteClient() {
+        return mRemoteClient;
+    }
+
+    public void setNetTransportListener(NetTransportListener l) {
+        mNetTransportListener = l;
     }
 
     public void start(String ip, int port) {
@@ -60,10 +64,6 @@ public class NetworkManager {
         mRemoteClientLooper = thread.getLooper();
         mRemoteClientHandler = new RemoteClientHandler(mRemoteClientLooper);
         connectRemoteServer(ip, port);
-    }
-
-    private void connectLocalServer(String ip, int port) {
-        mRemoteClientHandler.sendMessage(mRemoteClientHandler.obtainMessage(Configuration.MSG_CONNECT_LOCAL_ADBD, 0, port, ip));
     }
 
     private void connectRemoteServer(String ip, int port) {
@@ -85,31 +85,9 @@ public class NetworkManager {
                     Network.register(mRemoteClient);
                     mRemoteClient.addListener(mRemoteClientListener);
                     try {
-                        LogExt.e(TAG, "start connect remote server");
                         mRemoteClient.connect(5000, (String) msg.obj, msg.arg2);
-                        LogExt.e(TAG, "start connect remote over 1");
                     } catch (IOException ex) {
                         LogExt.e(TAG, "IOException", ex);
-                    }
-                    LogExt.e(TAG, "connect remote server over 2");
-                    break;
-                case Configuration.MSG_CONNECT_LOCAL_ADBD:
-                    if (null != msg.obj && !TextUtils.isEmpty((String) msg.obj)) {
-                        int flag = Configuration.FLAG_START_ADB_SUCCESS;
-                        mMainHandler.sendEmptyMessage(Configuration.MSG_UI_CMD_START_ADB);
-                        Socket socket = new Socket();
-                        try {
-                            socket.connect(new InetSocketAddress((String) msg.obj, Configuration.ADB_SERVER_PORT), 5000);
-                            mAdbSession = new AdbSession(mRemoteClient, socket);
-                            mAdbSession.startSession();
-                            LogExt.e(TAG, "client connect local adb socket ok");
-                        } catch (IOException e) {
-                            LogExt.e(TAG, "client connect socket error", e);
-                            flag = Configuration.FLAG_START_ADB_FAIL;
-                        }
-                        mMainHandler.sendMessage(mMainHandler.obtainMessage(Configuration.MSG_UI_START_ADB, flag));
-                    } else {
-
                     }
                     break;
                 default:
@@ -140,34 +118,25 @@ public class NetworkManager {
             LogExt.d(TAG, "received Object " + object);
 
             if (object instanceof UpdateNames) {
-                UpdateNames updateNames = (UpdateNames) object;
+                // UpdateNames updateNames = (UpdateNames) object;
                 return;
             }
 
             if (object instanceof ChatMessage) {
                 ChatMessage chatMessage = (ChatMessage) object;
-                // chatFrame.addMessage(chatMessage.text);
-                // getCurrentTermSession().write(chatMessage.text);
                 LogExt.d(TAG, "receive text: " + chatMessage.text);
-
-                if (!TextUtils.isEmpty(chatMessage.text) && chatMessage.text.startsWith(Configuration.CMD_CONNECT_ADB)) {
-                    connectLocalServer(mLocalIp, Configuration.ADB_SERVER_PORT);
-                    String temp = chatMessage.text.substring(Configuration.CMD_CONNECT_ADB.length()).trim();
-
-                    LogExt.d(TAG, "start connect local adb pc terminal ip is " + temp);
-                    // }else if(!TextUtils.isEmpty(chatMessage.text) &&
-                    // chatMessage.text.startsWith(Configuration.)){
-
+                if (null != mNetTransportListener && null != chatMessage) {
+                    mNetTransportListener.onNewMsg(chatMessage);
                 }
                 return;
             }
 
             if (object instanceof Data) {
-                Data bEx = (Data) object;
-                if (null != mAdbSession) {
-                    mAdbSession.onRemoteClientNewData(bEx);
+                Data data = (Data) object;
+                if (null != mNetTransportListener && null != data) {
+                    mNetTransportListener.onNewData(data);
                 }
-                LogExt.d(TAG, "receive bufferEx: " + bEx.getString());
+                LogExt.d(TAG, "receive data: " + data.getString());
             }
         }
 
@@ -178,10 +147,11 @@ public class NetworkManager {
         }
     };
 
-    private void remoteClientClose() {
+    public void remoteClientClose() {
         if (null != mRemoteClient) {
             mRemoteClient.stop();
         }
+        mRemoteClientLooper.quit();
     }
 
 }

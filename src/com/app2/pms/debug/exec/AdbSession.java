@@ -11,7 +11,7 @@ import com.app2.pms.common.LogExt;
 import com.app2.pms.debug.net.Data;
 import com.esotericsoftware.kryonet.Client;
 
-public class AdbSession{
+public class AdbSession {
 
     private static final String TAG = "app2-AdbSession";
 
@@ -44,14 +44,9 @@ public class AdbSession{
         }
     }
 
-    public void startSession() {
-        try {
-            mAdbClientOutputStream = new BufferedOutputStream(mAdbClientSocket.getOutputStream());
-            mAdbClientInputStream = new BufferedInputStream(mAdbClientSocket.getInputStream());
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+    public void startSession() throws IOException {
+        mAdbClientOutputStream = new BufferedOutputStream(mAdbClientSocket.getOutputStream());
+        mAdbClientInputStream = new BufferedInputStream(mAdbClientSocket.getInputStream());
 
         mAdbClientReadThread = new ReadThread(mAdbClientInputStream, mLocalClientBufferExs, "client read thread");
         mAdbClientReadThread.start();
