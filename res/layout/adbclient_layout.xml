@@ -7,31 +7,36 @@
         android:focusableInTouchMode="true"
         android:layout_width="0px" 
         android:layout_height="0px"/>
+        <EditText
+            android:id="@+id/host"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:digits="1234567890."
+            android:hint="@string/set_host"
+            android:maxLines="1"
+            android:background="@drawable/text_frame"
+            android:text="@string/tcp_address" 
+            android:textColor="@android:color/black">
+        </EditText>
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content" 
             android:orientation="horizontal">
-
-            <EditText
-                android:id="@+id/host"
+            <Button
+                android:id="@+id/bind_service"
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:digits="1234567890."
-                android:hint="@string/set_host"
-                android:maxLines="1"
-                android:background="@drawable/text_frame"
-                android:text="@string/tcp_address" 
-                android:textColor="@android:color/black">
-            </EditText>
+                android:layout_centerHorizontal="true"
+                android:text="@string/bind_service" />
 
             <Button
-                android:id="@+id/ok"
-                android:layout_width="wrap_content"
+                android:id="@+id/connect_adb_service"
+                android:layout_width="0dp"
+                android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/host"
                 android:layout_centerHorizontal="true"
-                android:text="@android:string/ok" />
+                android:text="@string/connect_adb_service" />
         </LinearLayout>
     <ScrollView
         android:id="@+id/scrollContent"

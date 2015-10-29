@@ -42,15 +42,15 @@ public class DebugService extends Service implements com.app2.pms.debug.data.Par
     private NetworkManager mNetworkManager;
     private ParseModel mParseModel;
     private Session mSession;
-    private boolean service_status = false;
+    public boolean serviceStatus = false;
     private Handler adbMainHandler = null;
+    private String mServerIp = null;
+    private int mServerPort = 0;
     private String mIp = null;
-
     private ServerHandler mServerHandler = null;
     private Looper mLooper = null;
 
     private AdbSession mAdbSession = null;
-
     public DebugService() {
         super();
     }
@@ -72,9 +72,11 @@ public class DebugService extends Service implements com.app2.pms.debug.data.Par
     }
 
     private void openLocalAdbdWifiDebug() {
+        LogExt.d(TAG, "openLocalAdbdWifiDebug : start");
         AdbManager.setAdbdTcpPort(String.valueOf(Configuration.ADB_SERVER_PORT));
         AdbManager.stopAdbd();
         AdbManager.startAdbd();
+        LogExt.d(TAG, "openLocalAdbdWifiDebug : end");
     }
 
     private int startAdbSession(String ip) {
@@ -103,8 +105,15 @@ public class DebugService extends Service implements com.app2.pms.debug.data.Par
         @Override
         public void handleMessage(Message msg) {
             // TODO Auto-generated method stub
-            // super.handleMessage(msg);
-            if (adbMainHandler != null) {
+            //super.handleMessage(msg);
+            if (msg.what == Configuration.MSG_DISCONNECT_REMOTE_SERVER) {
+                serviceStatus = false;
+            }
+            if (msg.what == Configuration.MSG_CONNECT_REMOTE_SERVER) {
+                serviceStatus = true;
+            }
+            if(adbMainHandler != null) {
+                //adbMainHandler.obtainMessage(msg.what, msg.obj).sendToTarget();
                 adbMainHandler.sendMessage(Message.obtain(msg));
             }
         }
@@ -137,14 +146,12 @@ public class DebugService extends Service implements com.app2.pms.debug.data.Par
 
     @Override
     public IBinder onBind(Intent intent) {
-        LogExt.d(TAG, "onBind");
-        if (mNetworkManager != null && !service_status) {
-            Bundle bundle = intent.getBundleExtra("ip-port");
-            String ip = bundle.getString("ip");
-            int port = bundle.getInt("port");
-            mNetworkManager.start(ip, port);
+        /*if (mNetworkManager != null && !service_status) {
+            mNetworkManager.start(mIp, mPort);
             service_status = true;
-        }
+        }*/
+        mServerIp = intent.getStringExtra("ip");
+        mServerPort = intent.getIntExtra("port", 0);
         return new ExchangeBinder();
     }
 
@@ -185,6 +192,16 @@ public class DebugService extends Service implements com.app2.pms.debug.data.Par
                     break;
                 default:
                     break;
+            }
+        }
+    }
+
+        public void connectAdbSerice() {
+        if (mNetworkManager != null && !serviceStatus) {
+            if((mServerIp!=null) && (mServerPort!=0)) {
+                LogExt.d(TAG, "connectAdbSerice  ip-port 1:" + mServerIp + "-" + mServerPort);
+                mNetworkManager.start(mServerIp, mServerPort);
+                LogExt.d(TAG, "connectAdbSerice  ip-port；" + mServerIp + "-" + mServerPort);
             }
         }
     }

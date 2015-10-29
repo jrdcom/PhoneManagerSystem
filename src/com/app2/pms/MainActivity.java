@@ -4,13 +4,10 @@ package com.app2.pms;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.app2.pms.common.Configuration;
 import com.app2.pms.common.LogExt;
 import com.app2.pms.debug.app.DebugService;
 
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
@@ -175,9 +172,7 @@ public class MainActivity extends Activity {
         public int getCount() {
             // TODO Auto-generated method stub
             return mListFragments.size();
-        }  private View mContactView;
-        private View mCommentView;
-        private View mPrivateView;
+        }
         @Override
         public void finishUpdate(View container) {
             if (mTransaction != null) {

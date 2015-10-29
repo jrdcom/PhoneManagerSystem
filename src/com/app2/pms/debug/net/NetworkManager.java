@@ -110,6 +110,7 @@ public class NetworkManager {
         @Override
         public void disconnected(Connection connection) {
             mRemoteClient.stop();
+            mMainHandler.obtainMessage(Configuration.MSG_DISCONNECT_REMOTE_SERVER).sendToTarget();
         }
 
         @Override

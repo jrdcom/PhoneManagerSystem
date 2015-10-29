@@ -15,5 +15,7 @@
     <string name="set_host">input ip:</string>
     <string name="tcp_address">192.168.123.1</string>
     <string name="test">test</string>
+    <string name="bind_service">绑定服务</string>
+    <string name="connect_adb_service">链接adb服务</string>
     
 </resources>

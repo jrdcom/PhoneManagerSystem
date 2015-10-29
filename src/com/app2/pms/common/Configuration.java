@@ -5,6 +5,8 @@ public class Configuration {
 
     public static final int MANAGER_SERVER_PORT = 6666;
     public static final int ADB_SERVER_PORT = 9999;
+    
+    public static final String ADBD_TCP_SYSTEM_PROPERTY = "service.adb.tcp.port";
 
     public static final String CMD_RETURN_TAG = "RETURN-";
     public static final String CMD_CONNECT_ADB = "cmd_connect_adb";
@@ -35,4 +37,6 @@ public class Configuration {
     public static final int FLAG_START_ADB_SUCCESS = 1;
     public static final int FLAG_START_ADB_FAIL = 2;
 
+    public static final int MSG_DISCONNECT_REMOTE_SERVER = 5;
+    public static final int MSG_SHOW_INFO = 7;
 }
