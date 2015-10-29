@@ -117,8 +117,12 @@ public class NetworkManager {
         public void received(Connection connection, Object object) {
 
             LogExt.d(TAG, "received Object " + object);
-
-            if (object instanceof UpdateNames) {
+            if (!object.equals(null)) {
+                mNetTransportListener.onRecvObject(object);
+            }
+            
+           //mod by xuxr@tcl.com begin -->
+            /*if (object instanceof UpdateNames) {
                 // UpdateNames updateNames = (UpdateNames) object;
                 return;
             }
@@ -138,7 +142,9 @@ public class NetworkManager {
                     mNetTransportListener.onNewData(data);
                 }
                 LogExt.d(TAG, "receive data: " + data.getString());
-            }
+            }*/
+            
+          //mod by xuxr@tcl.com end <--
         }
 
         @Override
@@ -154,5 +160,11 @@ public class NetworkManager {
         }
         mRemoteClientLooper.quit();
     }
-
+	//add by xux@tcl.com begin -->
+    public void sendTCPData(Object obj) {
+        if (null != mRemoteClient) {
+            mRemoteClient.sendTCP(obj);
+        }
+    }
+    //add by xux@tcl.com end -->
 }

@@ -8,6 +8,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import com.app2.pms.common.LogExt;
+import com.app2.pms.debug.app.DebugService.AdbLocaltListener;
 import com.app2.pms.debug.net.Data;
 import com.esotericsoftware.kryonet.Client;
 
@@ -15,7 +16,7 @@ public class AdbSession {
 
     private static final String TAG = "app2-AdbSession";
 
-    private Client mRemoteClient = null;
+   // private Client mRemoteClient = null;
     private WriteThread2 mRemoteWriteThread = null;
 
     private BlockingQueue<Data> mRemoteClientBufferExs = new LinkedBlockingQueue<Data>();
@@ -30,9 +31,13 @@ public class AdbSession {
     private WriteThread mAdbClientWriteThread = null;
 
     private BlockingQueue<Data> mLocalClientBufferExs = new LinkedBlockingQueue<Data>();
+    //add by xuxr@tcl.com begin -->
+	private AdbLocaltListener mAdbLocaltListener;
+    //add by xuxr@tcl.com end <--
 
-    public AdbSession(Client remoteClient, Socket socket) {
-        mRemoteClient = remoteClient;
+    public AdbSession(AdbLocaltListener l, Socket socket) {
+        //mRemoteClient = remoteClient;
+        mAdbLocaltListener = l;
         mAdbClientSocket = socket;
     }
 
@@ -53,7 +58,7 @@ public class AdbSession {
         mAdbClientWriteThread = new WriteThread(mAdbClientOutputStream, mRemoteClientBufferExs, "client write thread");
         mAdbClientWriteThread.start();
 
-        mRemoteWriteThread = new WriteThread2(mRemoteClient, mLocalClientBufferExs, "send to remote server thread");
+        mRemoteWriteThread = new WriteThread2(mAdbLocaltListener, mLocalClientBufferExs, "send to remote server thread");
         mRemoteWriteThread.start();
     }
 
@@ -171,17 +176,19 @@ public class AdbSession {
     class WriteThread2 extends Thread {
 
         BlockingQueue<Data> bufferExs = null;
-        Client client = null;
+        //Client client = null;
+        AdbLocaltListener adbLocaltListener = null;
         boolean stop = false;
 
         public void setStop() {
             stop = true;
         }
 
-        public WriteThread2(Client client, BlockingQueue<Data> bExs, String name) {
+        public WriteThread2(AdbLocaltListener listener, BlockingQueue<Data> bExs, String name) {
             super(name);
             bufferExs = bExs;
-            this.client = client;
+            //this.client = client;
+            adbLocaltListener = listener;
         }
 
         @Override
@@ -190,11 +197,16 @@ public class AdbSession {
             try {
                 while (!stop && (null != (buffer = bufferExs.take()))) {
                     LogExt.d(TAG, "write: " + buffer.getString());
-                    client.sendTCP(buffer);
+                  //  client.sendTCP(buffer);
+                    adbLocaltListener.onSendTcp(buffer);
                 }
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
+    }
+	
+	 public interface LocalListener {
+        public void onLocalListener(Data data);
     }
 }
